@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Kontrol Kebersihan - Dengan Kata Sandi</title>
+    <title>Aplikasi Kontrol Kebersihan by udin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -83,7 +83,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_6obBbypkRZMrnGGsnaaymuykRKXgUllN2pimaS8VPe9E6WqF4GBovic8j2nmHGbcEA/exec';
         const tasks = [
-            { id: 1, name: "Sapu & pel lantai area atas" }, { id: 2, name: "Sapu & pel lantai area bawah" }, { id: 3, name: "Kebersihan pagar tralis atas" }, { id: 4, name: "Kebersihan pagar tralis bawah" }, { id: 5, name: "Sapu halaman Parkir" }, { id: 6, name: "Kebersihan area bak sampah" }, { id: 7, name: "Kebersihan wastafel dan sekitarnya" }, { id: 8, name: "Kebersihan kursi bayi" }, { id: 9, name: "Kebersihan kotak tisu" }, { id: 10, name: "Pengisian kecap, tisu, dan tusuk gigi" }, { id: 11, name: "Kebersihan Area kasir" }, { id: 12, name: "Kebersihan tempat dus nasi kotak" }, { id: 13, name: "Kebersihan & kerapian mushola" }, { id: 14, name: "Pengecekan & kebersihan toilet customer" }, { id: 15, name: "Kebersihan area plafond" }, { id: 16, name: "Kebersihan Ember & tempat sampah stainless" }, { id: 17, name: "Kebersihan tong sampah" }, { id: 18, name: "Kebersihan tangga (setiap minggu pertama)", frequency: "mingguan" }, { id: 19, name: "Membuang dan mengganti kresek sampah WC & mushola" },
+            { id: 1, name: "Sapu & pel lantai area atas" }, { id: 2, name: "Sapu & pel lantai area bawah" }, { id: 3, name: "Kebersihan pagar tralis atas" }, { id: 4, name: "Kebersihan pagar tralis bawah" }, { id: 5, name: "Cuci halaman" }, { id: 6, name: "Kebersihan area bak sampah" }, { id: 7, name: "Kebersihan wastafel dan sekitarnya" }, { id: 8, name: "Kebersihan kursi bayi" }, { id: 9, name: "Kebersihan kotak tisu" }, { id: 10, name: "Pengisian kecap, tisu, dan tusuk gigi" }, { id: 11, name: "Kebersihan Area kasir" }, { id: 12, name: "Kebersihan tempat dus nasi kotak" }, { id: 13, name: "Kebersihan & kerapian mushola" }, { id: 14, name: "Pengecekan & kebersihan toilet customer" }, { id: 15, name: "Kebersihan area playground" }, { id: 16, name: "Kebersihan Ember & tempat sampah stainless" }, { id: 17, name: "Kebersihan tong sampah" }, { id: 18, name: "Kebersihan tangga (setiap minggu pertama)", frequency: "mingguan" }, { id: 19, name: "Membuang dan mengganti kresek sampah WC & mushola" },
         ];
         tasks.forEach(t => { if (!t.frequency) t.frequency = 'harian'; });
 
@@ -97,7 +97,7 @@
         };
 
         async function loadDataFromSheet() {
-            if (SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbw_6obBbypkRZMrnGGsnaaymuykRKXgUllN2pimaS8VPe9E6WqF4GBovic8j2nmHGbcEA/exec') {
+            if (SCRIPT_URL === 'PASTE_YOUR_WEB_APP_URL_HERE') {
                 el.taskList.innerHTML = `<p class="text-red-500">Error: URL Google Apps Script belum dimasukkan.</p>`;
                 return;
             }
@@ -134,7 +134,12 @@
                 const date = new Date(year, month, day);
                 const dayEl = document.createElement('div');
                 dayEl.className = 'day-selector flex-shrink-0 flex flex-col items-center justify-center w-14 h-20 rounded-lg cursor-pointer transition-colors';
-                dayEl.dataset.date = date.toISOString().split('T')[0];
+                
+                const yearStr = date.getFullYear();
+                const monthStr = String(date.getMonth() + 1).padStart(2, '0');
+                const dayStr = String(date.getDate()).padStart(2, '0');
+                dayEl.dataset.date = `${yearStr}-${monthStr}-${dayStr}`;
+
                 const isSelected = date.toDateString() === selectedDate.toDateString();
                 dayEl.innerHTML = `<span class="text-sm">${date.toLocaleDateString('id-ID', { weekday: 'short' })}</span><span class="text-xl font-bold">${day}</span>`;
                 dayEl.classList.toggle('bg-blue-500', isSelected); dayEl.classList.toggle('text-white', isSelected); dayEl.classList.toggle('bg-gray-100', !isSelected); dayEl.classList.toggle('hover:bg-gray-200', !isSelected);
@@ -180,16 +185,24 @@
                 return true;
             } catch (error) {
                 console.error("Error generating report:", error);
-                el.reportContent.innerHTML = `<p class="text-red-500">Gagal membuat laporan.</p>`;
+                el.reportContent.innerHTML = `<p class="text-red-500">Gagal membuat laporan: ${error.message}</p>`;
                 return error.message;
             }
         }
+        
+        el.daysContainer.addEventListener('click', e => { 
+            const daySelector = e.target.closest('.day-selector'); 
+            if (daySelector) { 
+                selectedDate = new Date(daySelector.dataset.date + 'T00:00:00'); 
+                render(); 
+            } 
+        });
 
         el.prevMonthBtn.addEventListener('click', () => { viewDate.setMonth(viewDate.getMonth() - 1); selectedDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1); render(); });
         el.nextMonthBtn.addEventListener('click', () => { viewDate.setMonth(viewDate.getMonth() + 1); selectedDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1); render(); });
-        el.daysContainer.addEventListener('click', e => { const daySelector = e.target.closest('.day-selector'); if (daySelector) { selectedDate = new Date(daySelector.dataset.date + 'T00:00:00'); render(); } });
         el.taskList.addEventListener('input', e => {
-            const dateKey = selectedDate.toISOString().split('T')[0], taskId = e.target.dataset.taskId;
+            const dateKey = selectedDate.toISOString().split('T')[0];
+            const taskId = e.target.dataset.taskId;
             if (!checklistData[dateKey]) checklistData[dateKey] = {}; if (!checklistData[dateKey][taskId]) checklistData[dateKey][taskId] = {};
             if (e.target.type === 'checkbox') {
                 const personInput = e.target.closest('.task-item').querySelector('.person-input');
@@ -235,3 +248,4 @@
     </script>
 </body>
 </html>
+
