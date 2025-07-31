@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Kontrol Kebersihan by udin</title>
+    <title>Aplikasi Kontrol Kebersihan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -97,15 +97,20 @@
         };
 
         async function loadDataFromSheet() {
-            if (SCRIPT_URL === 'PASTE_YOUR_WEB_APP_URL_HERE') {
-                el.taskList.innerHTML = `<p class="text-red-500">Error: URL Google Apps Script belum dimasukkan.</p>`;
-                return;
-            }
+            el.taskList.innerHTML = `<p class="text-gray-500">Memuat data progres...</p>`;
             try {
-                const response = await fetch(`${SCRIPT_URL}?action=getData`);
+                // PENAMBAHAN UNTUK MENGATASI CACHE
+                const response = await fetch(`${SCRIPT_URL}?action=getData&v=${new Date().getTime()}`);
                 checklistData = await response.json();
+                if (Object.keys(checklistData).length === 0 && checklistData.constructor === Object) {
+                   // Ini bisa terjadi jika sheet kosong atau ada masalah di script
+                   console.log("Data yang diterima kosong.");
+                }
                 render();
-            } catch (error) { console.error("Error loading data:", error); el.taskList.innerHTML = `<p class="text-red-500">Gagal memuat data.</p>`; }
+            } catch (error) { 
+                console.error("Error loading data:", error); 
+                el.taskList.innerHTML = `<p class="text-red-500">Gagal memuat data. Periksa koneksi dan pengaturan script.</p>`; 
+            }
         }
 
         function saveDataToSheet(dateKey, taskDataForDate) {
@@ -149,12 +154,15 @@
 
         function renderTasksForSelectedDay() {
             el.taskList.innerHTML = '';
-            const dateKey = selectedDate.toISOString().split('T')[0];
+            const dateKey = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
             el.selectedDateHeader.textContent = `Tugas untuk ${selectedDate.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
             const applicableTasks = tasks.filter(task => task.frequency !== 'mingguan' || selectedDate.getDate() <= 7);
             if (applicableTasks.length === 0) { el.taskList.innerHTML = `<p class="text-gray-500">Tidak ada tugas.</p>`; return; }
+            
             applicableTasks.forEach(task => {
-                const taskData = checklistData[dateKey]?.[task.id] || {}, isChecked = taskData.status === 'checked', person = taskData.person || '';
+                const taskData = checklistData[dateKey]?.[task.id] || {};
+                const isChecked = taskData.status === 'checked';
+                const person = taskData.person || '';
                 const taskEl = document.createElement('div');
                 taskEl.className = 'task-item flex flex-wrap items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100';
                 taskEl.innerHTML = `<div class="flex-grow flex items-center"><input id="task-${task.id}" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" data-task-id="${task.id}" ${isChecked ? 'checked' : ''}><label for="task-${task.id}" class="ml-3 block text-sm font-medium text-gray-900">${task.name}</label></div><div class="w-full sm:w-auto mt-2 sm:mt-0 sm:ml-4"><input type="text" data-task-id="${task.id}" class="person-input text-sm p-1 border border-gray-300 rounded-md w-full sm:w-40 ${!isChecked ? 'hidden' : ''}" placeholder="Dikerjakan oleh..." value="${person}"></div>`;
@@ -201,7 +209,7 @@
         el.prevMonthBtn.addEventListener('click', () => { viewDate.setMonth(viewDate.getMonth() - 1); selectedDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1); render(); });
         el.nextMonthBtn.addEventListener('click', () => { viewDate.setMonth(viewDate.getMonth() + 1); selectedDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1); render(); });
         el.taskList.addEventListener('input', e => {
-            const dateKey = selectedDate.toISOString().split('T')[0];
+            const dateKey = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
             const taskId = e.target.dataset.taskId;
             if (!checklistData[dateKey]) checklistData[dateKey] = {}; if (!checklistData[dateKey][taskId]) checklistData[dateKey][taskId] = {};
             if (e.target.type === 'checkbox') {
@@ -209,7 +217,7 @@
                 checklistData[dateKey][taskId].status = e.target.checked ? 'checked' : 'unchecked';
                 personInput.classList.toggle('hidden', !e.target.checked);
                 if (!e.target.checked) { personInput.value = ''; checklistData[dateKey][taskId].person = ''; }
-                renderTasksForSelectedDay();
+                // Tidak perlu render ulang seluruh task, cukup toggle style
             }
             if (e.target.classList.contains('person-input')) { checklistData[dateKey][taskId].person = e.target.value; }
             saveDataToSheet(dateKey, checklistData[dateKey]);
@@ -248,4 +256,3 @@
     </script>
 </body>
 </html>
-
